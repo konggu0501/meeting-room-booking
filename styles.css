@@ -20,6 +20,7 @@ h1, h2, h3, p { margin-top: 0; } h1 { margin-bottom: 0; font-size: 30px; letter-
 .cancel-button { padding: 6px 9px; border: 0; border-radius: 8px; color: #c25b5b; background: #fff0f0; font-size: 12px; cursor: pointer; }
 .empty-state { padding: 30px 20px; color: #9aa5b8; text-align: center; font-size: 14px; }
 .primary-button { width: 100%; padding: 15px 18px; border: 0; border-radius: 13px; color: #fff; background: #5574c8; font-weight: 700; cursor: pointer; box-shadow: 0 8px 18px rgba(85,116,200,.22); } .primary-button:active { transform: translateY(1px); }
+.primary-button:disabled, .cancel-button:disabled { cursor: wait; opacity: .58; box-shadow: none; transform: none; }
 .action-bar { position: fixed; right: 0; bottom: 0; left: 0; z-index: 2; padding: 12px max(16px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); border-top: 1px solid rgba(223,229,239,.9); background: rgba(245,247,251,.94); backdrop-filter: blur(12px); }
 .action-bar .primary-button { display: block; max-width: 520px; margin: 0 auto; }
 .hint { margin: 12px 0 0; text-align: center; }
