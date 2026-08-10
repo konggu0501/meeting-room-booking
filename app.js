@@ -2,7 +2,6 @@ const SUPABASE_URL = 'https://mibxqjimftelazbkfpjl.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pYnhxamltZnRlbGF6YmtmcGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNDY1NjIsImV4cCI6MjEwMTkyMjU2Mn0.W1snZ6TcJlyNsU_R37RkNtw5ERQVfcPUC7EpRb0eeww';
 const API_URL = `${SUPABASE_URL}/rest/v1/bookings`;
 const CLIENT_ID_KEY = 'meeting-room-client-id';
-const BOOKINGS_CACHE_KEY = 'meeting-room-bookings-cache-v2';
 const currentUser = localStorage.getItem(CLIENT_ID_KEY) || crypto.randomUUID();
 localStorage.setItem(CLIENT_ID_KEY, currentUser);
 
@@ -33,20 +32,9 @@ async function getBookings() {
   endDate.setDate(endDate.getDate() + 30);
   const fields = 'id,date,start_time,end_time,name:department,client_id';
   const url = `${API_URL}?select=${fields}&date=gte.${start}&date=lte.${toDateString(endDate)}&order=date.asc,start_time.asc`;
-  const response = await fetchWithTimeout(url, { headers: apiHeaders() });
+  const response = await fetchWithTimeout(url, { headers: apiHeaders(), cache: 'no-store' });
   if (!response.ok) throw new Error(await response.text());
-  const bookings = await response.json();
-  localStorage.setItem(BOOKINGS_CACHE_KEY, JSON.stringify(bookings));
-  return bookings;
-}
-
-function getCachedBookings() {
-  try {
-    const cached = JSON.parse(localStorage.getItem(BOOKINGS_CACHE_KEY) || '[]');
-    return Array.isArray(cached) ? cached : [];
-  } catch {
-    return [];
-  }
+  return response.json();
 }
 
 function cleanupPastBookings() {
@@ -61,14 +49,14 @@ function cleanupPastBookings() {
 
 async function findConflict(date, start, end) {
   const url = `${API_URL}?select=id,client_id&date=eq.${date}&start_time=lt.${encodeURIComponent(end)}&end_time=gt.${encodeURIComponent(start)}&limit=1`;
-  const response = await fetchWithTimeout(url, { headers: apiHeaders() });
+  const response = await fetchWithTimeout(url, { headers: apiHeaders(), cache: 'no-store' });
   if (!response.ok) throw new Error(await response.text());
   const rows = await response.json();
   return rows[0] || null;
 }
 
 async function findBooking(id) {
-  const response = await fetchWithTimeout(`${API_URL}?select=id,client_id&id=eq.${id}&limit=1`, { headers: apiHeaders() });
+  const response = await fetchWithTimeout(`${API_URL}?select=id,client_id&id=eq.${id}&limit=1`, { headers: apiHeaders(), cache: 'no-store' });
   if (!response.ok) return null;
   const rows = await response.json();
   return rows[0] || null;
@@ -233,6 +221,4 @@ document.querySelector('#booking-form').addEventListener('submit', async event =
   }
 });
 
-const cachedBookings = getCachedBookings().filter(booking => dateTime(booking.date, booking.end_time) > Date.now());
-if (cachedBookings.length) renderBookings(cachedBookings);
 render();
