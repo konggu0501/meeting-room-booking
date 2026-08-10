@@ -8,7 +8,7 @@ const pad = n => String(n).padStart(2, '0');
 const today = new Date();
 const toDateString = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const formatDate = value => { const [, m, d] = value.split('-'); return `${Number(m)}月${Number(d)}日`; };
-const dateTime = (date, time) => new Date(`${date}T${time}:00`).getTime();
+const dateTime = (date, time) => new Date(`${date}T${String(time).slice(0, 5)}:00`).getTime();
 const escapeHtml = value => String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 
 async function getBookings() {
