@@ -32,7 +32,7 @@ async function render() {
     const list = (await getBookings()).filter(b => dateTime(b.date, b.end_time) > Date.now());
     document.querySelector('#booking-count').textContent = list.length ? `${list.length} 条` : '';
     listEl.innerHTML = list.length ? list.map(b => `
-      <div class="booking-item"><div><div class="booking-date">${formatDate(b.date)} ${b.start_time.slice(0,5)}–${b.end_time.slice(0,5)}</div><div class="booking-meta">${escapeHtml(b.department)}</div></div>
+      <div class="booking-item"><div><div class="booking-date">${formatDate(b.date)} ${b.start_time.slice(0,5)}–${b.end_time.slice(0,5)}</div><div class="booking-meta">${escapeHtml(b.department)}</div>${b.contact ? `<div class="booking-contact">联系方式：${escapeHtml(b.contact)}</div>` : ''}</div>
       ${b.client_id === currentUser ? `<div class="my-booking"><span class="mine-label">我的预约</span><button class="cancel-button" data-id="${b.id}">取消</button></div>` : ''}</div>`).join('') : '<div class="empty-state">暂无未来预约</div>';
     document.querySelectorAll('.cancel-button').forEach(btn => btn.addEventListener('click', () => cancelBooking(btn.dataset.id)));
   } catch (error) {

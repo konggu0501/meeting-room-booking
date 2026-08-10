@@ -8,32 +8,21 @@
 </head>
 <body>
   <main class="app-shell">
-    <header class="topbar">
+    <header class="compact-header">
       <div>
-        <p class="eyebrow">扫码即可预约</p>
-        <h1>会议室预约</h1>
+        <p class="eyebrow">会议室</p>
+        <h1>小会议室</h1>
       </div>
-      <div class="room-badge">ROOM 01</div>
+      <span id="booking-count" class="count-label"></span>
     </header>
 
-    <section class="hero-card">
-      <div class="hero-icon">⌂</div>
-      <div>
-        <h2>小会议室</h2>
-        <p>未来 30 天的预约安排</p>
-      </div>
-    </section>
-
     <section class="schedule-section">
-      <div class="section-heading">
-        <h3>未来预约</h3>
-        <span id="booking-count" class="count-label"></span>
-      </div>
       <div id="booking-list" class="booking-list"></div>
     </section>
 
-    <button id="open-booking" class="primary-button">预订会议室</button>
-    <p class="hint">请选择需要使用的时间段</p>
+    <div class="action-bar">
+      <button id="open-booking" class="primary-button">预订会议室</button>
+    </div>
   </main>
 
   <div id="booking-modal" class="modal hidden" aria-hidden="true">
@@ -61,6 +50,6 @@
   </div>
 
   <div id="toast" class="toast" role="status"></div>
-  <script src="app.js?v=20260810-3"></script>
+  <script src="app.js?v=20260810-4"></script>
 </body>
 </html>
