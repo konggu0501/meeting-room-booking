@@ -1,6 +1,6 @@
 const SUPABASE_URL = 'https://mibxqjimftelazbkfpjl.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pYnhxamltZnRlbGF6YmtmcGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNDY1NjIsImV4cCI6MjEwMTkyMjU2Mn0.W1snZ6TcJlyNsU_R37RkNtw5ERQVfcPUC7EpRb0eeww';
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const API_URL = `${SUPABASE_URL}/rest/v1/bookings`;
 const CLIENT_ID_KEY = 'meeting-room-client-id';
 const currentUser = localStorage.getItem(CLIENT_ID_KEY) || crypto.randomUUID();
 localStorage.setItem(CLIENT_ID_KEY, currentUser);
@@ -12,10 +12,12 @@ const dateTime = (date, time) => new Date(`${date}T${time}:00`).getTime();
 const escapeHtml = value => String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 
 async function getBookings() {
-  const { data, error } = await db.from('bookings').select('*').order('date').order('start_time');
-  if (error) throw error;
-  return data || [];
+  const response = await fetch(`${API_URL}?select=*&order=date.asc,start_time.asc`, { headers: apiHeaders() });
+  if (!response.ok) throw new Error(await response.text());
+  return response.json();
 }
+
+const apiHeaders = () => ({ apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' });
 
 async function render() {
   const listEl = document.querySelector('#booking-list');
@@ -38,8 +40,8 @@ function showToast(text) { const el = document.querySelector('#toast'); el.textC
 
 async function cancelBooking(id) {
   if (!confirm('确定取消这条预约吗？')) return;
-  const { error } = await db.from('bookings').delete().eq('id', id).eq('client_id', currentUser);
-  if (error) return showToast('取消失败，请稍后再试');
+  const response = await fetch(`${API_URL}?id=eq.${encodeURIComponent(id)}&client_id=eq.${encodeURIComponent(currentUser)}`, { method: 'DELETE', headers: apiHeaders() });
+  if (!response.ok) return showToast('取消失败，请稍后再试');
   await render(); showToast('预约已取消');
 }
 
@@ -55,8 +57,8 @@ document.querySelector('#booking-form').addEventListener('submit', async e => {
   if (!department) return errorEl.textContent = '请填写部门';
   const existing = await getBookings();
   if (existing.some(b => b.date === date && dateTime(date,start) < dateTime(b.date,b.end_time) && dateTime(date,end) > dateTime(b.date,b.start_time))) return errorEl.textContent = '该时间段已被预订，请重新选择';
-  const { error } = await db.from('bookings').insert({ date, start_time: start, end_time: end, department, contact: contact || null, client_id: currentUser });
-  if (error) return errorEl.textContent = '预约失败，请稍后再试';
+  const response = await fetch(API_URL, { method: 'POST', headers: { ...apiHeaders(), Prefer: 'return=minimal' }, body: JSON.stringify({ date, start_time: start, end_time: end, department, contact: contact || null, client_id: currentUser }) });
+  if (!response.ok) return errorEl.textContent = '预约失败，请稍后再试';
   closeModal(); await render(); showToast('预订成功');
 });
 
