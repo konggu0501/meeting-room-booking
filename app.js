@@ -19,9 +19,16 @@ async function getBookings() {
 
 const apiHeaders = () => ({ apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' });
 
+async function cleanupPastBookings() {
+  const cutoff = toDateString(new Date());
+  const response = await fetch(`${API_URL}?date=lt.${cutoff}`, { method: 'DELETE', headers: apiHeaders() });
+  if (!response.ok) throw new Error(await response.text());
+}
+
 async function render() {
   const listEl = document.querySelector('#booking-list');
   try {
+    await cleanupPastBookings();
     const list = (await getBookings()).filter(b => dateTime(b.date, b.end_time) > Date.now());
     document.querySelector('#booking-count').textContent = list.length ? `${list.length} 条` : '';
     listEl.innerHTML = list.length ? list.map(b => `
