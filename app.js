@@ -1,5 +1,5 @@
 const SUPABASE_URL = 'https://mibxqjimftelazbkfpjl.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_ovxonRXIVbVdoBaBsfJfBw_jAmYBhMY';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pYnhxamltZnRlbGF6YmtmcGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNDY1NjIsImV4cCI6MjEwMTkyMjU2Mn0.W1snZ6TcJlyNsU_R37RkNtw5ERQVfcPUC7EpRb0eeww';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const CLIENT_ID_KEY = 'meeting-room-client-id';
 const currentUser = localStorage.getItem(CLIENT_ID_KEY) || crypto.randomUUID();
