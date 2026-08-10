@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="preconnect" href="https://mibxqjimftelazbkfpjl.supabase.co" crossorigin />
+  <link rel="dns-prefetch" href="//mibxqjimftelazbkfpjl.supabase.co" />
   <title>会议室预约</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -41,8 +43,7 @@
           <label>开始时间<input id="start-time" type="time" step="900" required /></label>
           <label>结束时间<input id="end-time" type="time" step="900" required /></label>
         </div>
-        <label>部门<input id="department" type="text" placeholder="例如：市场部" required /></label>
-        <label>联系方式 <span class="optional">选填</span><input id="contact" type="text" placeholder="手机号或微信号" /></label>
+        <label>姓名<input id="name" type="text" placeholder="请输入预订人姓名" autocomplete="name" required /></label>
         <p id="form-error" class="form-error" role="alert"></p>
         <button class="primary-button" type="submit">确认预订</button>
       </form>
@@ -50,6 +51,6 @@
   </div>
 
   <div id="toast" class="toast" role="status"></div>
-  <script src="app.js?v=20260810-5"></script>
+  <script src="app.js?v=20260811-6"></script>
 </body>
 </html>

@@ -1,8 +1,8 @@
-:root { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif; color: #1e293b; background: #f5f7fb; }
+:root { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif; color: #1e293b; background: #f5f7fb; -webkit-text-size-adjust: 100%; }
 * { box-sizing: border-box; }
 body { margin: 0; min-height: 100vh; overflow-y: auto; background: radial-gradient(circle at 90% 0%, #e9f0ff 0, transparent 38%), #f5f7fb; }
-button, input { font: inherit; }
-.app-shell { width: min(100% - 32px, 520px); min-height: 100vh; margin: 0 auto; padding: 30px 0 104px; }
+button, input { font: inherit; touch-action: manipulation; }
+.app-shell { width: min(calc(100% - 24px), 520px); min-height: 100vh; min-height: 100dvh; margin: 0 auto; padding: max(22px, env(safe-area-inset-top)) 0 calc(96px + env(safe-area-inset-bottom)); }
 .compact-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
 .topbar, .section-heading, .modal-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .eyebrow { margin: 0 0 7px; color: #6782c5; font-size: 12px; font-weight: 700; letter-spacing: .08em; }
@@ -15,16 +15,17 @@ h1, h2, h3, p { margin-top: 0; } h1 { margin-bottom: 0; font-size: 30px; letter-
 .booking-list { margin-top: 14px; overflow: hidden; border: 1px solid #e5eaf4; border-radius: 16px; background: #fff; }
 .booking-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 17px 18px; border-bottom: 1px solid #edf0f5; } .booking-item:last-child { border-bottom: 0; }
 .booking-item > div:first-child { min-width: 0; }
-.booking-date { margin-bottom: 5px; color: #1e293b; font-size: 15px; font-weight: 700; } .booking-meta { color: #8a96a9; font-size: 13px; } .booking-contact { margin-top: 4px; color: #68758b; font-size: 13px; overflow-wrap: anywhere; }
+.booking-date { margin-bottom: 5px; color: #1e293b; font-size: 15px; font-weight: 700; } .booking-meta { color: #8a96a9; font-size: 13px; overflow-wrap: anywhere; }
 .my-booking { display: flex; flex-shrink: 0; align-items: center; gap: 9px; } .mine-label { color: #5574c8; font-size: 12px; font-weight: 700; }
 .cancel-button { padding: 6px 9px; border: 0; border-radius: 8px; color: #c25b5b; background: #fff0f0; font-size: 12px; cursor: pointer; }
 .empty-state { padding: 30px 20px; color: #9aa5b8; text-align: center; font-size: 14px; }
-.primary-button { width: 100%; padding: 15px 18px; border: 0; border-radius: 13px; color: #fff; background: #5574c8; font-weight: 700; cursor: pointer; box-shadow: 0 8px 18px rgba(85,116,200,.22); } .primary-button:active { transform: translateY(1px); }
+.primary-button { width: 100%; min-height: 48px; padding: 13px 18px; border: 0; border-radius: 13px; color: #fff; background: #5574c8; font-weight: 700; cursor: pointer; box-shadow: 0 8px 18px rgba(85,116,200,.22); } .primary-button:active { transform: translateY(1px); }
 .primary-button:disabled, .cancel-button:disabled { cursor: wait; opacity: .58; box-shadow: none; transform: none; }
 .action-bar { position: fixed; right: 0; bottom: 0; left: 0; z-index: 2; padding: 12px max(16px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); border-top: 1px solid rgba(223,229,239,.9); background: rgba(245,247,251,.94); backdrop-filter: blur(12px); }
 .action-bar .primary-button { display: block; max-width: 520px; margin: 0 auto; }
 .hint { margin: 12px 0 0; text-align: center; }
 .modal.hidden { display: none; } .modal { position: fixed; inset: 0; z-index: 3; display: grid; place-items: end center; }
-.modal-backdrop { position: absolute; inset: 0; background: rgba(19, 30, 54, .4); } .modal-card { position: relative; width: min(100%, 520px); padding: 25px 20px 28px; border-radius: 24px 24px 0 0; background: #fff; box-shadow: 0 -14px 40px rgba(20,40,80,.18); }
-.icon-button { border: 0; color: #8793a7; background: none; font-size: 28px; line-height: 1; cursor: pointer; } form { margin-top: 22px; } label { display: block; margin-bottom: 15px; color: #66738a; font-size: 13px; font-weight: 600; } input { display: block; width: 100%; margin-top: 7px; padding: 12px 13px; border: 1px solid #dfe5ef; border-radius: 10px; outline: none; color: #1e293b; background: #fbfcfe; } input:focus { border-color: #7891d4; background: #fff; } .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .optional { color: #a8b1bf; font-weight: 400; } .form-error { min-height: 18px; margin: 0 0 8px; color: #c25b5b; font-size: 13px; }
-.toast { position: fixed; left: 50%; bottom: 28px; z-index: 5; padding: 11px 16px; border-radius: 10px; color: #fff; background: rgba(25,35,58,.9); font-size: 13px; opacity: 0; transform: translate(-50%, 10px); transition: .2s; pointer-events: none; } .toast.show { opacity: 1; transform: translate(-50%, 0); }
+.modal-backdrop { position: absolute; inset: 0; background: rgba(19, 30, 54, .4); } .modal-card { position: relative; width: min(100%, 520px); max-height: 88vh; max-height: 88dvh; overflow-y: auto; padding: 24px 20px calc(24px + env(safe-area-inset-bottom)); border-radius: 24px 24px 0 0; background: #fff; box-shadow: 0 -14px 40px rgba(20,40,80,.18); }
+.icon-button { min-width: 44px; min-height: 44px; border: 0; color: #8793a7; background: none; font-size: 28px; line-height: 1; cursor: pointer; } form { margin-top: 18px; } label { display: block; margin-bottom: 14px; color: #66738a; font-size: 13px; font-weight: 600; } input { display: block; width: 100%; min-height: 46px; margin-top: 7px; padding: 11px 13px; border: 1px solid #dfe5ef; border-radius: 10px; outline: none; color: #1e293b; background: #fbfcfe; font-size: 16px; } input:focus { border-color: #7891d4; background: #fff; } .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .form-error { min-height: 18px; margin: 0 0 8px; color: #c25b5b; font-size: 13px; }
+.toast { position: fixed; left: 50%; bottom: calc(82px + env(safe-area-inset-bottom)); z-index: 5; padding: 11px 16px; border-radius: 10px; color: #fff; background: rgba(25,35,58,.9); font-size: 13px; opacity: 0; transform: translate(-50%, 10px); transition: .2s; pointer-events: none; } .toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (max-width: 350px) { .form-row { grid-template-columns: 1fr; gap: 0; } .booking-item { padding: 15px 14px; } .mine-label { display: none; } }

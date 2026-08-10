@@ -2,6 +2,7 @@ const SUPABASE_URL = 'https://mibxqjimftelazbkfpjl.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pYnhxamltZnRlbGF6YmtmcGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNDY1NjIsImV4cCI6MjEwMTkyMjU2Mn0.W1snZ6TcJlyNsU_R37RkNtw5ERQVfcPUC7EpRb0eeww';
 const API_URL = `${SUPABASE_URL}/rest/v1/bookings`;
 const CLIENT_ID_KEY = 'meeting-room-client-id';
+const BOOKINGS_CACHE_KEY = 'meeting-room-bookings-cache-v2';
 const currentUser = localStorage.getItem(CLIENT_ID_KEY) || crypto.randomUUID();
 localStorage.setItem(CLIENT_ID_KEY, currentUser);
 
@@ -30,11 +31,22 @@ async function getBookings() {
   const start = toDateString(new Date());
   const endDate = new Date();
   endDate.setDate(endDate.getDate() + 30);
-  const fields = 'id,date,start_time,end_time,department,contact,client_id';
+  const fields = 'id,date,start_time,end_time,name:department,client_id';
   const url = `${API_URL}?select=${fields}&date=gte.${start}&date=lte.${toDateString(endDate)}&order=date.asc,start_time.asc`;
   const response = await fetchWithTimeout(url, { headers: apiHeaders() });
   if (!response.ok) throw new Error(await response.text());
-  return response.json();
+  const bookings = await response.json();
+  localStorage.setItem(BOOKINGS_CACHE_KEY, JSON.stringify(bookings));
+  return bookings;
+}
+
+function getCachedBookings() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(BOOKINGS_CACHE_KEY) || '[]');
+    return Array.isArray(cached) ? cached : [];
+  } catch {
+    return [];
+  }
 }
 
 function cleanupPastBookings() {
@@ -80,16 +92,21 @@ async function render() {
   try {
     const list = (await getBookings()).filter(booking => dateTime(booking.date, booking.end_time) > Date.now());
     if (renderId !== latestRender) return;
-    document.querySelector('#booking-count').textContent = list.length ? `${list.length} 条` : '';
-    listEl.innerHTML = list.length ? list.map(booking => `
-      <div class="booking-item"><div><div class="booking-date">${formatDate(booking.date)} ${booking.start_time.slice(0,5)}–${booking.end_time.slice(0,5)}</div><div class="booking-meta">${escapeHtml(booking.department)}</div>${booking.contact ? `<div class="booking-contact">联系方式：${escapeHtml(booking.contact)}</div>` : ''}</div>
-      ${booking.client_id === currentUser ? `<div class="my-booking"><span class="mine-label">我的预约</span><button class="cancel-button" data-id="${booking.id}">取消</button></div>` : ''}</div>`).join('') : '<div class="empty-state">暂无未来预约</div>';
-    document.querySelectorAll('.cancel-button').forEach(button => button.addEventListener('click', () => cancelBooking(button.dataset.id, button)));
+    renderBookings(list);
   } catch (error) {
     if (renderId !== latestRender) return;
     listEl.innerHTML = '<div class="empty-state">预约数据暂时无法加载，请稍后刷新</div>';
     console.error(error);
   }
+}
+
+function renderBookings(list) {
+  const listEl = document.querySelector('#booking-list');
+  document.querySelector('#booking-count').textContent = list.length ? `${list.length} 条` : '';
+  listEl.innerHTML = list.length ? list.map(booking => `
+    <div class="booking-item"><div><div class="booking-date">${formatDate(booking.date)} ${booking.start_time.slice(0,5)}–${booking.end_time.slice(0,5)}</div><div class="booking-meta">${escapeHtml(booking.name)}</div></div>
+    ${booking.client_id === currentUser ? `<div class="my-booking"><span class="mine-label">我的预约</span><button class="cancel-button" data-id="${booking.id}">取消</button></div>` : ''}</div>`).join('') : '<div class="empty-state">暂无未来预约</div>';
+  document.querySelectorAll('.cancel-button').forEach(button => button.addEventListener('click', () => cancelBooking(button.dataset.id, button)));
 }
 
 function openModal() {
@@ -151,14 +168,13 @@ document.querySelector('#booking-form').addEventListener('submit', async event =
   const date = document.querySelector('#date').value;
   const start = document.querySelector('#start-time').value;
   const end = document.querySelector('#end-time').value;
-  const department = document.querySelector('#department').value.trim();
-  const contact = document.querySelector('#contact').value.trim();
+  const name = document.querySelector('#name').value.trim();
   const errorEl = document.querySelector('#form-error');
 
   errorEl.textContent = '';
   if (dateTime(date, end) <= dateTime(date, start)) return errorEl.textContent = '结束时间必须晚于开始时间';
   if (dateTime(date, start) < Date.now()) return errorEl.textContent = '不能预约已经开始的时间';
-  if (!department) return errorEl.textContent = '请填写部门';
+  if (!name) return errorEl.textContent = '请填写姓名';
 
   setSubmitting(true);
   let id;
@@ -180,7 +196,7 @@ document.querySelector('#booking-form').addEventListener('submit', async event =
     const response = await fetchWithTimeout(API_URL, {
       method: 'POST',
       headers: { ...apiHeaders(), Prefer: 'return=minimal' },
-      body: JSON.stringify({ id, date, start_time: start, end_time: end, department, contact: contact || null, client_id: currentUser })
+      body: JSON.stringify({ id, date, start_time: start, end_time: end, department: name, client_id: currentUser })
     });
 
     if (!response.ok) {
@@ -217,4 +233,6 @@ document.querySelector('#booking-form').addEventListener('submit', async event =
   }
 });
 
+const cachedBookings = getCachedBookings().filter(booking => dateTime(booking.date, booking.end_time) > Date.now());
+if (cachedBookings.length) renderBookings(cachedBookings);
 render();
