@@ -2,8 +2,24 @@ const SUPABASE_URL = 'https://mibxqjimftelazbkfpjl.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pYnhxamltZnRlbGF6YmtmcGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNDY1NjIsImV4cCI6MjEwMTkyMjU2Mn0.W1snZ6TcJlyNsU_R37RkNtw5ERQVfcPUC7EpRb0eeww';
 const API_URL = `${SUPABASE_URL}/rest/v1/bookings`;
 const CLIENT_ID_KEY = 'meeting-room-client-id';
-const currentUser = localStorage.getItem(CLIENT_ID_KEY) || crypto.randomUUID();
-localStorage.setItem(CLIENT_ID_KEY, currentUser);
+const CLIENT_COOKIE_KEY = 'meeting_room_client_id';
+
+function readLocalClientId() {
+  try { return localStorage.getItem(CLIENT_ID_KEY) || ''; } catch { return ''; }
+}
+
+function readCookieClientId() {
+  const match = document.cookie.match(new RegExp(`(?:^|; )${CLIENT_COOKIE_KEY}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
+const localClientId = readLocalClientId();
+const cookieClientId = readCookieClientId();
+const currentUser = localClientId || cookieClientId || crypto.randomUUID();
+const knownClientIds = new Set([currentUser, localClientId, cookieClientId].filter(Boolean));
+
+try { localStorage.setItem(CLIENT_ID_KEY, currentUser); } catch {}
+document.cookie = `${CLIENT_COOKIE_KEY}=${encodeURIComponent(currentUser)}; Max-Age=31536000; Path=/; SameSite=Lax; Secure`;
 
 const pad = n => String(n).padStart(2, '0');
 const toDateString = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -15,6 +31,7 @@ const apiHeaders = () => ({ apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPAB
 let cleanupPromise;
 let latestRender = 0;
 let submitting = false;
+const sleep = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
   const controller = new AbortController();
@@ -49,10 +66,19 @@ function cleanupPastBookings() {
 
 async function findConflict(date, start, end) {
   const url = `${API_URL}?select=id,client_id&date=eq.${date}&start_time=lt.${encodeURIComponent(end)}&end_time=gt.${encodeURIComponent(start)}&limit=1`;
-  const response = await fetchWithTimeout(url, { headers: apiHeaders(), cache: 'no-store' });
-  if (!response.ok) throw new Error(await response.text());
-  const rows = await response.json();
-  return rows[0] || null;
+  let lastError;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const response = await fetchWithTimeout(url, { headers: apiHeaders(), cache: 'no-store' }, 12000);
+      if (!response.ok) throw new Error(await response.text());
+      const rows = await response.json();
+      return rows[0] || null;
+    } catch (error) {
+      lastError = error;
+      if (attempt === 0) await sleep(600);
+    }
+  }
+  throw lastError;
 }
 
 async function findBooking(id) {
@@ -60,6 +86,15 @@ async function findBooking(id) {
   if (!response.ok) return null;
   const rows = await response.json();
   return rows[0] || null;
+}
+
+async function verifyOwnedBooking(id) {
+  for (const delay of [0, 500, 1200, 2400]) {
+    if (delay) await sleep(delay);
+    const booking = await findBooking(id).catch(() => null);
+    if (booking) return knownClientIds.has(booking.client_id) ? booking : null;
+  }
+  return null;
 }
 
 async function deterministicBookingId(date, start, end) {
@@ -93,7 +128,7 @@ function renderBookings(list) {
   document.querySelector('#booking-count').textContent = list.length ? `${list.length} 条` : '';
   listEl.innerHTML = list.length ? list.map(booking => `
     <div class="booking-item"><div><div class="booking-date">${formatDate(booking.date)} ${booking.start_time.slice(0,5)}–${booking.end_time.slice(0,5)}</div><div class="booking-meta">${escapeHtml(booking.name)}</div></div>
-    ${booking.client_id === currentUser ? `<div class="my-booking"><span class="mine-label">我的预约</span><button class="cancel-button" data-id="${booking.id}">取消</button></div>` : ''}</div>`).join('') : '<div class="empty-state">暂无未来预约</div>';
+    ${knownClientIds.has(booking.client_id) ? `<div class="my-booking"><span class="mine-label">我的预约</span><button class="cancel-button" data-id="${booking.id}">取消</button></div>` : ''}</div>`).join('') : '<div class="empty-state">暂无未来预约</div>';
   document.querySelectorAll('.cancel-button').forEach(button => button.addEventListener('click', () => cancelBooking(button.dataset.id, button)));
 }
 
@@ -136,7 +171,8 @@ async function cancelBooking(id, button) {
   if (!confirm('确定取消这条预约吗？')) return;
   button.disabled = true;
   try {
-    const response = await fetchWithTimeout(`${API_URL}?id=eq.${encodeURIComponent(id)}&client_id=eq.${encodeURIComponent(currentUser)}`, { method: 'DELETE', headers: apiHeaders() });
+    const ownerIds = [...knownClientIds].map(value => `"${value.replaceAll('"', '')}"`).join(',');
+    const response = await fetchWithTimeout(`${API_URL}?id=eq.${encodeURIComponent(id)}&client_id=in.(${encodeURIComponent(ownerIds)})`, { method: 'DELETE', headers: apiHeaders() });
     if (!response.ok) throw new Error(await response.text());
     await render();
     showToast('预约已取消');
@@ -171,7 +207,7 @@ document.querySelector('#booking-form').addEventListener('submit', async event =
     id = await deterministicBookingId(date, start, end);
     const conflict = await findConflict(date, start, end);
     if (conflict) {
-      if (conflict.id === id && conflict.client_id === currentUser) {
+      if (conflict.id === id && knownClientIds.has(conflict.client_id)) {
         setSubmitting(false);
         closeModal();
         await render();
@@ -181,34 +217,42 @@ document.querySelector('#booking-form').addEventListener('submit', async event =
       return;
     }
 
-    const response = await fetchWithTimeout(API_URL, {
-      method: 'POST',
-      headers: { ...apiHeaders(), Prefer: 'return=minimal' },
-      body: JSON.stringify({ id, date, start_time: start, end_time: end, department: name, client_id: currentUser })
-    });
+    let response;
+    let requestError;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        response = await fetchWithTimeout(API_URL, {
+          method: 'POST',
+          headers: { ...apiHeaders(), Prefer: 'return=minimal' },
+          body: JSON.stringify({ id, date, start_time: start, end_time: end, department: name, client_id: currentUser })
+        }, 20000);
+        if (response.ok) break;
+        if (response.status !== 409) throw new Error(await response.text());
+      } catch (error) {
+        requestError = error;
+      }
 
-    if (!response.ok) {
-      if (response.status === 409) {
-        const existing = await findBooking(id);
-        if (existing?.client_id === currentUser) {
-          setSubmitting(false);
-          closeModal();
-          await render();
-          return showToast('预约已保存');
-        }
+      const existing = await verifyOwnedBooking(id);
+      if (existing) {
+        response = { ok: true };
+        break;
+      }
+      if (response?.status === 409) {
         errorEl.textContent = '该时间段刚刚被预订，请重新选择';
         return;
       }
-      throw new Error(await response.text());
+      if (attempt === 0) await sleep(800);
     }
+
+    if (!response?.ok) throw requestError || new Error('预约请求未确认');
 
     setSubmitting(false);
     closeModal();
     await render();
     showToast('预订成功');
   } catch (error) {
-    const existing = id ? await findBooking(id).catch(() => null) : null;
-    if (existing?.client_id === currentUser) {
+    const existing = id ? await verifyOwnedBooking(id) : null;
+    if (existing) {
       setSubmitting(false);
       closeModal();
       await render();
