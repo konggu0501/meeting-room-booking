@@ -27,11 +27,18 @@ const formatDate = value => { const [, m, d] = value.split('-'); return `${Numbe
 const dateTime = (date, time) => new Date(`${date}T${String(time).slice(0, 5)}:00`).getTime();
 const escapeHtml = value => String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const apiHeaders = () => ({ apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' });
+const timeOptions = Array.from({ length: 48 }, (_, index) => `${pad(Math.floor(index / 2))}:${index % 2 ? '30' : '00'}`);
 
 let cleanupPromise;
 let latestRender = 0;
 let submitting = false;
 const sleep = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+
+function populateTimeSelects() {
+  const options = timeOptions.map(time => `<option value="${time}">${time}</option>`).join('');
+  document.querySelector('#start-time').innerHTML = options;
+  document.querySelector('#end-time').innerHTML = options;
+}
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
   const controller = new AbortController();
@@ -265,4 +272,5 @@ document.querySelector('#booking-form').addEventListener('submit', async event =
   }
 });
 
+populateTimeSelects();
 render();

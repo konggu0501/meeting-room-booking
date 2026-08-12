@@ -6,7 +6,7 @@
   <link rel="preconnect" href="https://mibxqjimftelazbkfpjl.supabase.co" crossorigin />
   <link rel="dns-prefetch" href="//mibxqjimftelazbkfpjl.supabase.co" />
   <title>会议室预约</title>
-  <link rel="stylesheet" href="styles.css?v=20260811-3" />
+  <link rel="stylesheet" href="styles.css?v=20260812-1" />
 </head>
 <body>
   <main class="app-shell">
@@ -40,8 +40,8 @@
       <form id="booking-form">
         <label>日期<input id="date" type="date" required /></label>
         <div class="form-row">
-          <label>开始时间<input id="start-time" type="time" step="900" required /></label>
-          <label>结束时间<input id="end-time" type="time" step="900" required /></label>
+          <label>开始时间<select id="start-time" required></select></label>
+          <label>结束时间<select id="end-time" required></select></label>
         </div>
         <label>姓名<input id="name" type="text" placeholder="请输入预订人姓名" autocomplete="name" required /></label>
         <p id="form-error" class="form-error" role="alert"></p>
@@ -51,6 +51,6 @@
   </div>
 
   <div id="toast" class="toast" role="status"></div>
-  <script src="app.js?v=20260811-8"></script>
+  <script src="app.js?v=20260812-1"></script>
 </body>
 </html>
